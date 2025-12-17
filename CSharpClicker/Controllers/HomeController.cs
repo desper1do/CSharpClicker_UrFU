@@ -1,6 +1,6 @@
 ﻿using CSharpClicker.UseCases.GetBoosts;
 using CSharpClicker.UseCases.GetCurrentUserInfo;
-using CSharpClicker.UseCases.GetLeaderboard; // <-- Добавить этот юзинг
+using CSharpClicker.UseCases.GetLeaderboard;
 using CSharpClicker.ViewModels;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -31,7 +31,7 @@ public class HomeController : Controller
         return View(viewModel);
     }
 
-    // --- НОВЫЙ МЕТОД НИЖЕ ---
+    // новый метод
     [HttpGet]
     public async Task<IActionResult> Leaderboard(int page = 1)
     {
