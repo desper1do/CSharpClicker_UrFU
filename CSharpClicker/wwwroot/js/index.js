@@ -1,4 +1,6 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
+    console.log("CSharpClicker: Script loaded"); 
+
     const connection = new signalR.HubConnectionBuilder()
         .withUrl('/clickerHub')
         .withAutomaticReconnect()
@@ -6,18 +8,18 @@
 
     connection.start()
         .then(function () {
-            console.log('Connection started');
+            console.log('SignalR: Connected');
         })
         .catch(function (err) {
-            return console.error(err.toString());
+            return console.error('SignalR Error:', err.toString());
         });
 
     connection.on('ScoreUpdated', function (current, record) {
         const currentScoreElement = document.getElementById('currentScore');
         const recordScoreElement = document.getElementById('recordScore');
 
-        currentScoreElement.textContent = current;
-        recordScoreElement.textContent = record;
+        if (currentScoreElement) currentScoreElement.textContent = current;
+        if (recordScoreElement) recordScoreElement.textContent = record;
 
         updateBoostsAvailability();
     });
@@ -26,57 +28,90 @@
         const profitPerClickElement = document.getElementById('profitPerClick');
         const profitPerSecondElement = document.getElementById('profitPerSecond');
 
-        profitPerClickElement.textContent = profitPerClick;
-        profitPerSecondElement.textContent = profitPerSecond;
+        if (profitPerClickElement) profitPerClickElement.textContent = profitPerClick;
+        if (profitPerSecondElement) profitPerSecondElement.textContent = profitPerSecond;
     });
 
     connection.on('BoostUpdated', function (boostId, quantity, currentPrice) {
-        // Quote the attribute value to ensure correct CSS selection (numbers can be problematic unquoted)
         const boostElement = document.querySelector(`[data-boost-id="${boostId}"]`);
 
-        const priceElement = boostElement.querySelector('[data-boost-price]');
-        const quantityElement = boostElement.querySelector('[data-boost-quantity]');
+        if (boostElement) {
+            const priceElement = boostElement.querySelector('[data-boost-price]');
+            const quantityElement = boostElement.querySelector('[data-boost-quantity]');
 
-        priceElement.textContent = currentPrice;
-        quantityElement.textContent = quantity;
+            if (priceElement) priceElement.textContent = currentPrice;
+            if (quantityElement) quantityElement.textContent = quantity;
 
-        updateBoostsAvailability();
+            boostElement.style.borderColor = "#ffc107";
+            setTimeout(() => boostElement.style.borderColor = "transparent", 300);
+
+            updateBoostsAvailability();
+        }
     });
 
     const clickButton = document.getElementById('click-item');
-    clickButton.addEventListener('click', async function () {
-        const clickCount = 1; // You can change this to the actual click count
-        await connection.invoke('RegisterClicks', clickCount);
-    });
-
-    const boostElements = document.querySelectorAll('.boost-item');
-
-    boostElements.forEach(function (boostElement) {
-        const boostId = boostElement.getAttribute('data-boost-id');
-        const buyButton = boostElement.querySelector('.buy-boost-button');
-
-        buyButton.addEventListener('click', async function () {
-            connection.invoke('BuyBoost', parseInt(boostId, 10));
+    if (clickButton) {
+        clickButton.addEventListener('click', async function () {
+            try {
+                await connection.invoke('RegisterClicks', 1);
+            } catch (err) {
+                console.error("Click Error:", err);
+            }
         });
+    }
+
+    // Ищем все карточки бустов
+    const boostCards = document.querySelectorAll('.boost-card');
+    console.log(`Found ${boostCards.length} boost cards`);
+
+    boostCards.forEach(function (card) {
+        const boostId = card.getAttribute('data-boost-id');
+        const buyButton = card.querySelector('.buy-boost-button');
+
+        if (buyButton) {
+            buyButton.addEventListener('click', async function (e) {
+                e.preventDefault();
+
+                if (buyButton.disabled) return; 
+
+                console.log(`Buying boost ID: ${boostId}`);
+
+                try {
+                    await connection.invoke('BuyBoost', parseInt(boostId, 10));
+                } catch (err) {
+                    console.error("Buy Error:", err);
+                }
+            });
+        }
     });
 
     updateBoostsAvailability();
 
     function updateBoostsAvailability() {
         const currentScoreElement = document.getElementById('currentScore');
+        if (!currentScoreElement) return;
 
-        const currentScore = parseInt(currentScoreElement.textContent, 10);
+        const currentScore = parseInt(currentScoreElement.textContent.replace(/[^0-9]/g, ''), 10) || 0;
+        const cards = document.querySelectorAll('.boost-card');
 
-        boostElements.forEach(function (boostElement) {
-            const priceElement = boostElement.querySelector('[data-boost-price]');
-            const buyButton = boostElement.querySelector('.buy-boost-button');
+        cards.forEach(function (card) {
+            const priceElement = card.querySelector('[data-boost-price]');
+            const buyButton = card.querySelector('.buy-boost-button');
 
-            if (currentScore < parseInt(priceElement.textContent, 10)) {
-                boostElement.classList.add('disabled');
-                buyButton.disabled = true;
-            } else {
-                boostElement.classList.remove('disabled');
-                buyButton.disabled = false;
+            if (priceElement && buyButton) {
+                const price = parseInt(priceElement.textContent.replace(/[^0-9]/g, ''), 10);
+
+                if (currentScore < price) {
+                    card.classList.add('disabled');
+                    buyButton.disabled = true;
+                    buyButton.style.cursor = "not-allowed";
+                    buyButton.style.opacity = "0.5";
+                } else {
+                    card.classList.remove('disabled');
+                    buyButton.disabled = false;
+                    buyButton.style.cursor = "pointer";
+                    buyButton.style.opacity = "1";
+                }
             }
         });
     }

@@ -1,71 +1,95 @@
 ﻿@model IndexViewModel
 
-@section styles{
-	<link href="~/css/index.css" rel="stylesheet">
+@section styles {
+    <link href="~/css/index.css" rel="stylesheet">
 }
 
-@section scripts{
-	<script src="~/js/index.js"></script>
+@section scripts {
+    <script src="~/js/index.js" asp-append-version="true"></script>
 }
 
+<div class="game-wrapper">
+    <aside class="sidebar-left">
+        <div class="user-card card-panel">
+            <div class="avatar-circle">
+                <i class="fas fa-user-astronaut"></i>
+            </div>
+            <h3>@Model.UserInfo.UserName</h3>
+            <div class="score-display">
+                <span class="score-label">Золото</span>
+                <span id="currentScore" class="score-value">@Model.UserInfo.CurrentScore</span>
+            </div>
+            <div class="score-sub">
+                Всего добыто: <span id="recordScore">@Model.UserInfo.RecordScore</span>
+            </div>
 
-<div id="stats" class="card">
-	<h5>Ты добываешь <span id="profitPerClick">@Model.UserInfo.ProfitPerClick</span> золота с одного удара</h5>
-	<h5>Твои крестьяне добывают <span id="profitPerSecond">@Model.UserInfo.ProfitPerSecond</span> золота в секунду</h5>
-</div>
+            <a href="/Home/Leaderboard" class="btn-leaderboard">
+                <i class="fas fa-trophy"></i> Таблица лидеров
+            </a>
 
-<div id="boosts" class="card">
-	<h3>Улучшения:</h3>
-	<div class="wrapper">
-		@foreach (var boost in Model.Boosts)
-		{
-			var userBoost = Model.UserInfo.UserBoosts.FirstOrDefault(ub => ub.BoostId == boost.Id);
-			var imgSrc = $"data:image/png;base64,{Convert.ToBase64String(boost.Image)}";
+            <form asp-controller="Auth" asp-action="Logout" method="post" class="mt-3 w-100">
+                <button type="submit" class="btn-logout">Выйти</button>
+            </form>
+        </div>
 
-			<div data-boost-id="@boost.Id" class="boost-item">
-				<img src="@imgSrc" />
-				<button class="buy-boost-button">
-					Купить
-				</button>
-				<h6>@boost.Title</h6>
-				<h6>
-					Стоит
-					<span data-boost-price>
-						@(userBoost != null
-											? userBoost.CurrentPrice
-											: boost.Price)
-					</span>
-					Золота
-				</h6>
-				<h6>
-					Куплено
-					<span data-boost-quantity>
-						@(userBoost != null
-											? userBoost.Quantity
-											: 0)
-					</span>
-					Штук
-				</h6>
-				<h6>
-					Дает 
-					<span>@boost.Profit</span>
-					Золота
-					<span>@(boost.IsAuto ? "в секунду" : "за клик")</span>
-				</h6>
-			</div>
-		}
-	</div>
-</div>
+        <div class="stats-card card-panel">
+            <h4><i class="fas fa-chart-line"></i> Статистика</h4>
+            <div class="stat-row">
+                <span>За клик:</span>
+                <span class="stat-value text-gold">+<span id="profitPerClick">@Model.UserInfo.ProfitPerClick</span> <i class="fas fa-coins"></i></span>
+            </div>
+            <div class="stat-row">
+                <span>В секунду:</span>
+                <span class="stat-value text-blue">+<span id="profitPerSecond">@Model.UserInfo.ProfitPerSecond</span> <i class="fas fa-bolt"></i></span>
+            </div>
+        </div>
+    </aside>
 
-<div id="greeting" class="d-flex d-column align-items-center card">
-	<h2>Приветствуем тебя, @Model.UserInfo.UserName</h2>
-	<h4>У тебя есть <span id="currentScore">@Model.UserInfo.CurrentScore</span> золота</h4>
-	<h4>Всего ты добыл <span id="recordScore">@Model.UserInfo.RecordScore</span> золота</h4>
+    <main class="main-area">
+        <div class="clicker-zone">
+            <div class="glow-effect"></div>
 
-	<a href="/Home/Leaderboard" class="btn btn-warning mt-2">Таблица лидеров</a>
-</div>
+            <button id="click-item" class="clicker-btn">
+            </button>
+            <div class="click-instruction">Кликай, чтобы добывать золото!</div>
+        </div>
+    </main>
 
-<div class="d-flex justify-content-center align-items-center vh-100">
-	<button id="click-item">
-	</button>
+    <aside class="sidebar-right">
+        <div class="shop-header">
+            <h3><i class="fas fa-shopping-cart"></i> Магазин</h3>
+        </div>
+        <div class="boosts-list custom-scroll">
+            @foreach (var boost in Model.Boosts)
+            {
+                var userBoost = Model.UserInfo.UserBoosts.FirstOrDefault(ub => ub.BoostId == boost.Id);
+                var imgSrc = $"data:image/png;base64,{Convert.ToBase64String(boost.Image)}";
+
+                <div data-boost-id="@boost.Id" class="boost-card">
+                    <div class="boost-image">
+                        <img src="@imgSrc" alt="@boost.Title" />
+                    </div>
+                    <div class="boost-info">
+                        <div class="boost-top">
+                            <h5 class="boost-title">@boost.Title</h5>
+                            <div class="boost-badge">
+                                x<span data-boost-quantity>@(userBoost != null ? userBoost.Quantity : 0)</span>
+                            </div>
+                        </div>
+                        <div class="boost-profit-info">
+                            <i class="fas @(boost.IsAuto ? "fa-clock" : "fa-mouse-pointer")"></i>
+                            +@boost.Profit @(boost.IsAuto ? "/сек" : "/клик")
+                        </div>
+                    </div>
+                    <button class="buy-boost-button">
+                        <span class="price-label">Купить за</span>
+                        <span class="price-val" data-boost-price>
+                            @(userBoost != null ? userBoost.CurrentPrice : boost.Price)
+                        </span>
+                        <i class="fas fa-coins"></i>
+                    </button>
+                </div>
+            }
+        </div>
+    </aside>
 </div>

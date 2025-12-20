@@ -1,55 +1,69 @@
 ﻿@model CSharpClicker.ViewModels.LeaderboardViewModel
 
 @{
-    ViewBag.Title = "Таблица лидеров";
-    // Вычисляем стартовый ранг (место) для текущей страницы
+    ViewBag.Title = "Топ игроков";
     var startRank = (Model.CurrentPage - 1) * 10 + 1;
 }
 
 <div class="container mt-5">
-    <div class="card p-4 shadow-sm" style="background-color: lightblue;">
-        <h2 class="text-center mb-4">ТОП ИГРОКОВ</h2>
-
-        <div class="d-flex justify-content-between mb-3">
-            <a asp-action="Index" asp-controller="Home" class="btn btn-primary">Назад к кликеру</a>
-        </div>
-
-        <table class="table table-striped table-hover bg-white rounded">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Игрок</th>
-                    <th scope="col">Текущее золото</th>
-                    <th scope="col">Рекорд</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in Model.Users)
-                {
-                    <tr>
-                        <th scope="row">@(startRank++)</th>
-                        <td>@user.UserName</td>
-                        <td>@user.CurrentScore.ToString("N0")</td>
-                        <td>@user.RecordScore.ToString("N0")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
-                    <a class="page-link" asp-action="Leaderboard" asp-route-page="@(Model.CurrentPage - 1)">Назад</a>
-                </li>
-
-                <li class="page-item disabled">
-                    <span class="page-link">Страница @Model.CurrentPage из @Model.TotalPages</span>
-                </li>
-
-                <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
-                    <a class="page-link" asp-action="Leaderboard" asp-route-page="@(Model.CurrentPage + 1)">Вперед</a>
-                </li>
-            </ul>
-        </nav>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0"><i class="fas fa-crown text-warning"></i> Зал Славы</h2>
+        <a asp-action="Index" asp-controller="Home" class="btn btn-outline-warning">
+            <i class="fas fa-arrow-left"></i> Назад к игре
+        </a>
     </div>
+
+    <div class="card shadow-sm border-0" style="background-color: var(--card-bg); border-radius: 12px; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0" style="--bs-table-bg: transparent;">
+                <thead style="background-color: #2a2a30; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; color: var(--text-secondary);">
+                    <tr>
+                        <th scope="col" class="p-3"># Ранг</th>
+                        <th scope="col" class="p-3">Игрок</th>
+                        <th scope="col" class="p-3 text-end">Золото</th>
+                        <th scope="col" class="p-3 text-end">Рекорд</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        var rank = startRank++;
+                        var rankClass = "";
+                        var icon = "";
+
+                        if (rank == 1) { rankClass = "text-warning fw-bold"; icon = "🥇"; }
+                        else if (rank == 2) { rankClass = "text-secondary fw-bold"; icon = "🥈"; }
+                        else if (rank == 3) { rankClass = "text-danger fw-bold"; icon = "🥉"; }
+
+                        <tr>
+                            <td class="p-3 align-middle @rankClass">
+                                @if (!string.IsNullOrEmpty(icon))
+                                {
+                                    <span class="me-2">@icon</span>
+                                }
+                                @rank
+                            </td>
+                            <td class="p-3 align-middle fw-semibold">@user.UserName</td>
+                            <td class="p-3 align-middle text-end text-warning font-monospace">@user.CurrentScore.ToString("N0")</td>
+                            <td class="p-3 align-middle text-end text-muted font-monospace">@user.RecordScore.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                <a class="page-link bg-dark border-secondary text-white" asp-action="Leaderboard" asp-route-page="@(Model.CurrentPage - 1)">Назад</a>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link bg-dark border-secondary text-muted">Стр. @Model.CurrentPage из @Model.TotalPages</span>
+            </li>
+            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                <a class="page-link bg-dark border-secondary text-white" asp-action="Leaderboard" asp-route-page="@(Model.CurrentPage + 1)">Вперед</a>
+            </li>
+        </ul>
+    </nav>
 </div>
