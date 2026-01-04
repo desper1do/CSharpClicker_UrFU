@@ -26,8 +26,8 @@ public class ClickerHub : Hub
     public async Task ScoreUpdated(Guid userId, long current, long record, CancellationToken cancellationToken)
         => await Clients.User(userId.ToString()).SendAsync("ScoreUpdated", current, record, cancellationToken);
 
-    public async Task BoostUpdated(Guid userId, int boostId, int quantity, long currentPrice, CancellationToken cancellationToken)
-        => await Clients.User(userId.ToString()).SendAsync("BoostUpdated", boostId, quantity, currentPrice, cancellationToken);
+    public async Task BoostUpdated(Guid userId, int boostId, int quantity, long currentPrice, long nextLevelProfit, CancellationToken cancellationToken)
+        => await Clients.User(userId.ToString()).SendAsync("BoostUpdated", boostId, quantity, currentPrice, nextLevelProfit, cancellationToken);
 
     public async Task ProfitUpdated(Guid userId, long profitPerClick, long profitPerSecond, CancellationToken cancellationToken)
         => await Clients.User(userId.ToString()).SendAsync("ProfitUpdated", profitPerClick, profitPerSecond, cancellationToken);
@@ -48,7 +48,6 @@ public class ClickerHub : Hub
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         var connectionId = Context.ConnectionId;
-
         connectedUsersRegistry.RemoveUser(connectionId);
 
         return base.OnDisconnectedAsync(exception);

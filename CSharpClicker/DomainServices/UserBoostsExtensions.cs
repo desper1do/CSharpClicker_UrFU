@@ -4,9 +4,8 @@ namespace CSharpClicker.DomainServices;
 
 public static class UserBoostsExtensions
 {
-    // 0.5 = каждые 20 зданий удваивают эффективность
+    // 0.05 = каждые 20 зданий удваивают эффективность
     private const double QuantitySynergyFactor = 0.05;
-
     // сколько процентов от дохода в секунду добавляется к клику (5%)
     private const double PassiveToClickRatio = 0.05;
 
@@ -16,11 +15,9 @@ public static class UserBoostsExtensions
         long baseClick = 1;
 
         // 2. добавляем силу от "ручных" бустов (кирка, динамит)
-        // формула: (база * кол-во) * (1 + кол-во * 0.05)
-        // пример: 10 Динамитов (сила 100) дадут не 1000, а 1500 урона
         var manualBoostsProfit = userBoosts
             .Where(ub => !ub.Boost.IsAuto)
-            .Sum(ub => ub.Boost.Profit * ub.Quantity * (1 + ub.Quantity * QuantitySynergyFactor));
+            .Sum(ub => CalculateTotalProfit(ub.Boost.Profit, ub.Quantity));
 
         // 3. считаем текущий авто-доход (чтобы добавить процент от него к клику)
         var passiveIncome = userBoosts.GetProfitPerSecond();
@@ -34,8 +31,27 @@ public static class UserBoostsExtensions
         // считаем доход от авто-бустов с учетом синергии количества
         return (long)userBoosts
             .Where(ub => ub.Boost.IsAuto)
-            .Sum(ub => ub.Boost.Profit * ub.Quantity * (1 + ub.Quantity * QuantitySynergyFactor));
+            .Sum(ub => CalculateTotalProfit(ub.Boost.Profit, ub.Quantity));
+    }
+
+    /// <summary>
+    /// Считает общий доход от буста при заданном количестве
+    /// Формула: (Profit * Count) * (1 + Count * 0.05)
+    /// </summary>
+    private static double CalculateTotalProfit(long baseProfit, int quantity)
+    {
+        return baseProfit * quantity * (1 + quantity * QuantitySynergyFactor);
+    }
+
+    /// <summary>
+    /// Считает, сколько дохода добавит покупка СЛЕДУЮЩЕГО (+1) буста.
+    /// Это разница между доходом при (N+1) и доходом при N.
+    /// </summary>
+    public static long CalculateIncomeGain(long baseProfit, int currentQuantity)
+    {
+        var currentTotal = CalculateTotalProfit(baseProfit, currentQuantity);
+        var nextTotal = CalculateTotalProfit(baseProfit, currentQuantity + 1);
+
+        return (long)(nextTotal - currentTotal);
     }
 }
-
-

@@ -12,8 +12,8 @@ public class ScoreNotificationService : IScoreNotificationService
         this.hubContext = hubContext;
     }
 
-    public Task NotifyBoostChangedAsync(Guid userId, int boostId, int quantity, long currentPrice, CancellationToken cancellationToken = default)
-        => hubContext.Clients.User(userId.ToString()).SendAsync("BoostUpdated", boostId, quantity, currentPrice, cancellationToken);
+    public Task NotifyBoostChangedAsync(Guid userId, int boostId, int quantity, long currentPrice, long nextLevelProfit, CancellationToken cancellationToken = default)
+        => hubContext.Clients.User(userId.ToString()).SendAsync("BoostUpdated", boostId, quantity, currentPrice, nextLevelProfit, cancellationToken);
 
     public Task NotifyProfitChangedAsync(Guid userId, long profitPerClick, long profitPerSecond, CancellationToken cancellationToken = default)
         => hubContext.Clients.User(userId.ToString()).SendAsync("ProfitUpdated", profitPerClick, profitPerSecond, cancellationToken);

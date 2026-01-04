@@ -35,6 +35,7 @@ public class BuyBoostCommandHandler : IRequestHandler<BuyBoostCommand, Unit>
         var userBoost = currentUser.UserBoosts.FirstOrDefault(ub => ub.BoostId == boost.Id);
 
         long priceToPay;
+
         if (userBoost != null)
         {
             userBoost.Quantity++;
@@ -58,17 +59,22 @@ public class BuyBoostCommandHandler : IRequestHandler<BuyBoostCommand, Unit>
 
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        // Расчитываем, сколько даст СЛЕДУЮЩАЯ покупка (от текущего кол-ва к +1)
+        var nextLevelProfit = UserBoostsExtensions.CalculateIncomeGain(boost.Profit, userBoost.Quantity);
+
         await scoreNotificationService.NotifyScoreChangedAsync(currentUser.Id, currentUser.CurrentScore, currentUser.RecordScore, cancellationToken);
         await scoreNotificationService.NotifyProfitChangedAsync(
             currentUser.Id,
             currentUser.UserBoosts.GetProfitPerClick(),
             currentUser.UserBoosts.GetProfitPerSecond(),
             cancellationToken);
+
         await scoreNotificationService.NotifyBoostChangedAsync(
             currentUser.Id,
             boost.Id,
             userBoost.Quantity!,
             userBoost.CurrentPrice!,
+            nextLevelProfit, // <-- Передаем новый актуальный профит
             cancellationToken);
 
         return Unit.Value;

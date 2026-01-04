@@ -1,5 +1,5 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-    console.log("CSharpClicker: Script loaded"); 
+    console.log("CSharpClicker: Script loaded");
 
     const connection = new signalR.HubConnectionBuilder()
         .withUrl('/clickerHub')
@@ -32,15 +32,18 @@
         if (profitPerSecondElement) profitPerSecondElement.textContent = profitPerSecond;
     });
 
-    connection.on('BoostUpdated', function (boostId, quantity, currentPrice) {
+    // Добавлен аргумент nextProfit
+    connection.on('BoostUpdated', function (boostId, quantity, currentPrice, nextProfit) {
         const boostElement = document.querySelector(`[data-boost-id="${boostId}"]`);
 
         if (boostElement) {
             const priceElement = boostElement.querySelector('[data-boost-price]');
             const quantityElement = boostElement.querySelector('[data-boost-quantity]');
+            const profitElement = boostElement.querySelector('[data-boost-profit]'); // Находим элемент профита
 
             if (priceElement) priceElement.textContent = currentPrice;
             if (quantityElement) quantityElement.textContent = quantity;
+            if (profitElement) profitElement.textContent = nextProfit; // Обновляем профит
 
             boostElement.style.borderColor = "#ffc107";
             setTimeout(() => boostElement.style.borderColor = "transparent", 300);
@@ -72,7 +75,7 @@
             buyButton.addEventListener('click', async function (e) {
                 e.preventDefault();
 
-                if (buyButton.disabled) return; 
+                if (buyButton.disabled) return;
 
                 console.log(`Buying boost ID: ${boostId}`);
 
