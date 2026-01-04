@@ -1,6 +1,43 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
     console.log("CSharpClicker: Script loaded");
 
+    // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ФОРМАТИРОВАНИЯ ---
+    function formatCompactNumber(number) {
+        if (number < 1000) return Math.floor(number);
+
+        // K: 1,000 - 999,999
+        if (number < 1000000) {
+            return formatValue(number, 1000, "K");
+        }
+
+        // M: 1,000,000 - 999,999,999
+        if (number < 1000000000) {
+            return formatValue(number, 1000000, "M");
+        }
+
+        // B: 1,000,000,000+
+        if (number < 1000000000000) {
+            return formatValue(number, 1000000000, "B");
+        }
+
+        return formatValue(number, 1000000000000, "T");
+    }
+
+    function formatValue(number, divisor, suffix) {
+        let value = number / divisor;
+
+        // Округляем до 2 знаков, но parseFloat уберет лишние нули (1.50 -> 1.5)
+        let shortValue = parseFloat(value.toFixed(2));
+
+        // Если число >= 100 (например 290.5M), округляем до целого для красоты (291M)
+        if (shortValue >= 100) {
+            shortValue = Math.round(shortValue);
+        }
+
+        return shortValue + suffix;
+    }
+    // ----------------------------------------------
+
     const connection = new signalR.HubConnectionBuilder()
         .withUrl('/clickerHub')
         .withAutomaticReconnect()
@@ -18,8 +55,15 @@
         const currentScoreElement = document.getElementById('currentScore');
         const recordScoreElement = document.getElementById('recordScore');
 
-        if (currentScoreElement) currentScoreElement.textContent = current;
-        if (recordScoreElement) recordScoreElement.textContent = record;
+        if (currentScoreElement) {
+            currentScoreElement.setAttribute('data-val', current);
+            currentScoreElement.textContent = formatCompactNumber(current);
+        }
+
+        if (recordScoreElement) {
+            recordScoreElement.setAttribute('data-val', record);
+            recordScoreElement.textContent = formatCompactNumber(record);
+        }
 
         updateBoostsAvailability();
     });
@@ -28,22 +72,24 @@
         const profitPerClickElement = document.getElementById('profitPerClick');
         const profitPerSecondElement = document.getElementById('profitPerSecond');
 
-        if (profitPerClickElement) profitPerClickElement.textContent = profitPerClick;
-        if (profitPerSecondElement) profitPerSecondElement.textContent = profitPerSecond;
+        if (profitPerClickElement) profitPerClickElement.textContent = formatCompactNumber(profitPerClick);
+        if (profitPerSecondElement) profitPerSecondElement.textContent = formatCompactNumber(profitPerSecond);
     });
 
-    // Добавлен аргумент nextProfit
     connection.on('BoostUpdated', function (boostId, quantity, currentPrice, nextProfit) {
         const boostElement = document.querySelector(`[data-boost-id="${boostId}"]`);
 
         if (boostElement) {
             const priceElement = boostElement.querySelector('[data-boost-price]');
             const quantityElement = boostElement.querySelector('[data-boost-quantity]');
-            const profitElement = boostElement.querySelector('[data-boost-profit]'); // Находим элемент профита
+            const profitElement = boostElement.querySelector('[data-boost-profit]');
 
-            if (priceElement) priceElement.textContent = currentPrice;
+            if (priceElement) {
+                priceElement.setAttribute('data-boost-price', currentPrice);
+                priceElement.textContent = formatCompactNumber(currentPrice);
+            }
             if (quantityElement) quantityElement.textContent = quantity;
-            if (profitElement) profitElement.textContent = nextProfit; // Обновляем профит
+            if (profitElement) profitElement.textContent = formatCompactNumber(nextProfit);
 
             boostElement.style.borderColor = "#ffc107";
             setTimeout(() => boostElement.style.borderColor = "transparent", 300);
@@ -63,9 +109,7 @@
         });
     }
 
-    // Ищем все карточки бустов
     const boostCards = document.querySelectorAll('.boost-card');
-    console.log(`Found ${boostCards.length} boost cards`);
 
     boostCards.forEach(function (card) {
         const boostId = card.getAttribute('data-boost-id');
@@ -76,8 +120,6 @@
                 e.preventDefault();
 
                 if (buyButton.disabled) return;
-
-                console.log(`Buying boost ID: ${boostId}`);
 
                 try {
                     await connection.invoke('BuyBoost', parseInt(boostId, 10));
@@ -94,7 +136,9 @@
         const currentScoreElement = document.getElementById('currentScore');
         if (!currentScoreElement) return;
 
-        const currentScore = parseInt(currentScoreElement.textContent.replace(/[^0-9]/g, ''), 10) || 0;
+        const rawScore = currentScoreElement.getAttribute('data-val');
+        const currentScore = parseInt(rawScore, 10) || 0;
+
         const cards = document.querySelectorAll('.boost-card');
 
         cards.forEach(function (card) {
@@ -102,7 +146,8 @@
             const buyButton = card.querySelector('.buy-boost-button');
 
             if (priceElement && buyButton) {
-                const price = parseInt(priceElement.textContent.replace(/[^0-9]/g, ''), 10);
+                const rawPrice = priceElement.getAttribute('data-boost-price');
+                const price = parseInt(rawPrice, 10);
 
                 if (currentScore < price) {
                     card.classList.add('disabled');

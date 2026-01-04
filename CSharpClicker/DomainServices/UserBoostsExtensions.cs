@@ -34,19 +34,15 @@ public static class UserBoostsExtensions
             .Sum(ub => CalculateTotalProfit(ub.Boost.Profit, ub.Quantity));
     }
 
-    /// <summary>
-    /// Считает общий доход от буста при заданном количестве
-    /// Формула: (Profit * Count) * (1 + Count * 0.05)
-    /// </summary>
+    // считает общий доход от буста при заданном количестве
+    // формула: (Profit * Count) * (1 + Count * 0.05)
     private static double CalculateTotalProfit(long baseProfit, int quantity)
     {
         return baseProfit * quantity * (1 + quantity * QuantitySynergyFactor);
     }
 
-    /// <summary>
-    /// Считает, сколько дохода добавит покупка СЛЕДУЮЩЕГО (+1) буста.
-    /// Это разница между доходом при (N+1) и доходом при N.
-    /// </summary>
+    // считает, сколько дохода добавит покупка СЛЕДУЮЩЕГО (+1) буста.
+    // разница между доходом при (N+1) и доходом при N.
     public static long CalculateIncomeGain(long baseProfit, int currentQuantity)
     {
         var currentTotal = CalculateTotalProfit(baseProfit, currentQuantity);

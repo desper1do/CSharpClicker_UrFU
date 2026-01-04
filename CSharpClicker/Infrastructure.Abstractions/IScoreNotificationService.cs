@@ -4,7 +4,6 @@ public interface IScoreNotificationService
 {
     Task NotifyScoreChangedAsync(Guid userId, long current, long record, CancellationToken cancellationToken = default);
 
-    // Добавили nextLevelProfit
     Task NotifyBoostChangedAsync(Guid userId, int boostId, int quantity, long currentPrice, long nextLevelProfit, CancellationToken cancellationToken = default);
 
     Task NotifyProfitChangedAsync(Guid userId, long profitPerClick, long profitPerSecond, CancellationToken cancellationToken = default);
